@@ -1,69 +1,58 @@
-'use strict';
+// Modules to control application life and create native browser window
+const {app, BrowserWindow} = require('electron')
+const path = require('path')
+const fetch = require('node-fetch')
 
-const electron = require('electron');
-// Module to control application life.
-const app = electron.app;
-// Module to create native browser window.
-const BrowserWindow = electron.BrowserWindow;
-
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
-let mainWindow;
-
-function createWindow (railsApp, railsAddr) {
+function createWindow (railsApp) {
   // Create the browser window.
-  mainWindow = new BrowserWindow({width: 800, height: 600});
+  const mainWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js')
+    }
+  })
 
-  // and load the rails app of the app.
-  mainWindow.loadURL('http://localhost:3000');
+  // and load the index.html of the app.
+  mainWindow.loadURL('http://localhost:3000')
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools()
 
-  // Emitted when the window is closed.
-  mainWindow.on('closed', function() {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-
-    railsApp.kill('SIGINT');
-    mainWindow = null;
-  });
+   // Emitted when the window is closed.
+   mainWindow.on('closed', function() {
+    railsApp.kill('SIGINT')
+  })
 }
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
-app.on('ready', function() {
-  var railsApp = require('child_process').spawn('rails', ['s']);
-  var rp = require('request-promise');
+// Some APIs can only be used after this event occurs.
+app.whenReady().then(() => {
+  const railsApp = require('child_process').spawn('rails', ['s'])
 
-  function start() {
-  rp('http://localhost:3000')
-    .then(function (htmlString) {
-      console.log('rails server started~!');
-      createWindow(railsApp);
+  console.log("starting rails server... waiting 5 seconds")
+
+  async function start() {
+    const res = await fetch('http://localhost:3000')
+    console.log('rails server started')
+    createWindow(railsApp)
+    app.on('activate', function () {
+      // On macOS it's common to re-create a window in the app when the
+      // dock icon is clicked and there are no other windows open.
+      if (BrowserWindow.getAllWindows().length === 0) createWindow(railsApp)
     })
-    .catch(function (error) {
-      console.log('Waiting on server to start...');
-      setTimeout(start, 1000);
-    });
   }
-  start();
-});
 
-// Quit when all windows are closed.
+  setTimeout(() => start(), 5000)
+})
+
+// Quit when all windows are closed, except on macOS. There, it's common
+// for applications and their menu bar to stay active until the user quits
+// explicitly with Cmd + Q.
 app.on('window-all-closed', function () {
-  // On OS X it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
+  if (process.platform !== 'darwin') app.quit()
+})
 
-app.on('activate', function () {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (mainWindow === null) {
-    createWindow();
-  }
-});
+// In this file you can include the rest of your app's specific main process
+// code. You can also put them in separate files and require them here.

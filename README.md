@@ -1,4 +1,3 @@
-
 # How to Run
 
 - `bundle install`
