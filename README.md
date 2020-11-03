@@ -1,5 +1,5 @@
 # How to Run
 
 - `bundle install`
-- `npm install`
-- `npm start`
+- `yarn`
+- `yarn start`
