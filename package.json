@@ -15,7 +15,7 @@
   },
   "version": "0.1.0",
   "devDependencies": {
-    "electron": "^11.5.0",
+    "electron": "^13.6.6",
     "webpack-dev-server": "^3.11.2"
   }
 }
